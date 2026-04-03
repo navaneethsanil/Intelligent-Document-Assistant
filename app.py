@@ -11,7 +11,7 @@ st.markdown("<h1 style='text-align: center;'>📚 Intelligent Document Assistant
 
 # ---------- Session State Initialization ----------
 # Initializes keys used across sessions
-for key in ["page", "chat_history", "openai_api_key"]:
+for key in ["page", "chat_history", "mistral_api_key"]:
     if key not in st.session_state:
         st.session_state[key] = (
             None if key == "page" 
@@ -22,7 +22,7 @@ for key in ["page", "chat_history", "openai_api_key"]:
 # ---------- Page 1: API Key Entry and File Upload ----------
 if st.session_state.page != "chat":
     st.subheader("🔐 Enter API Key")
-    api_key_input = st.text_input("OpenAI API Key", type="password", value=st.session_state.openai_api_key)
+    api_key_input = st.text_input("Mistral API Key", type="password", value=st.session_state.mistral_api_key)
 
     st.subheader("📄 Upload a Document")
     uploaded_file = st.file_uploader("Choose a document", type=["pdf", "docx"])
@@ -30,12 +30,12 @@ if st.session_state.page != "chat":
     if st.button("Submit and Go to Chat"):
         # Validate inputs
         if not api_key_input:
-            st.error("❌ Please enter the OpenAI API Key.")
+            st.error("❌ Please enter the Mistral API Key.")
         elif not uploaded_file:
             st.error("❌ Please upload a document.")
         else:
             # Store API key
-            st.session_state.openai_api_key = api_key_input
+            st.session_state.mistral_api_key = api_key_input
 
             try:
                 # Save uploaded file temporarily
@@ -108,7 +108,7 @@ elif st.session_state.page == "chat":
         try:
             with st.spinner("Generating..."):
                 # Query document using backend
-                response = query_document(api_key=st.session_state.openai_api_key, question=prompt)
+                response = query_document(api_key=st.session_state.mistral_api_key, question=prompt)
 
                 # Typing animation effect for bot's response
                 typed_text = ""
