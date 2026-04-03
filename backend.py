@@ -2,29 +2,30 @@ import faiss
 
 from pathlib import Path
 from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains import create_retrieval_chain
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_mistralai import MistralAIEmbeddings
+from langchain_mistralai.chat_models import ChatMistralAI
 from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores import FAISS
 
 
 def initialize_llm(api_key: str):
     """
-    Initializes the OpenAI LLM (gpt-4o) with specified parameters.
+    Initializes the Mistral chat model with specified parameters.
 
     Args:
-        api_key (str): OpenAI API key.
+        api_key (str): Mistral API key.
 
     Returns:
-        ChatOpenAI: An instance of the OpenAI chat model.
+        ChatMistralAI: An instance of the Mistral chat model.
     """
-    llm = ChatOpenAI(
-        model="gpt-4o",
+    llm = ChatMistralAI(
+        model="mistral-large-latest",
         temperature=0,
-        api_key=api_key
+        api_key=api_key,
     )
     return llm
 
@@ -35,13 +36,13 @@ def upload_document(doc_path: str, api_key: str):
 
     Args:
         doc_path (str): Path to the document (.pdf or .docx).
-        api_key (str): OpenAI API key.
+        api_key (str): Mistral API key.
 
     Raises:
         ValueError: If the document type is not supported.
     """
     # Initialize the embedding model
-    embedding_model = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=api_key)
+    embedding_model = MistralAIEmbeddings(model="mistral-embed", api_key=api_key)
     
     # Create a new FAISS index
     index = faiss.IndexFlatL2(len(embedding_model.embed_query("hello world")))
@@ -86,7 +87,7 @@ def query_document(api_key: str, question: str):
     Loads the saved FAISS index and runs a retrieval-augmented query over it.
 
     Args:
-        api_key (str): OpenAI API key.
+        api_key (str): Mistral API key.
         question (str): User's question.
 
     Returns:
@@ -101,16 +102,20 @@ def query_document(api_key: str, question: str):
     # Load vector store from local storage
     vector_store = FAISS.load_local(
         "document-index", 
-        OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=api_key),
+        MistralAIEmbeddings(model="mistral-embed", api_key=api_key),
         allow_dangerous_deserialization=True
     )
 
-    # Create document QA chain
-    document_chain = create_stuff_documents_chain(llm, prompt)
     retriever = vector_store.as_retriever()
-    retrieval_chain = create_retrieval_chain(retriever, document_chain)
 
-    # Query the document
-    response = retrieval_chain.invoke({"input": question})
+    def format_docs(docs):
+        return "\n\n".join(doc.page_content for doc in docs)
 
-    return response["answer"] if isinstance(response, dict) else str(response)
+    chain = (
+        {"context": retriever | format_docs, "input": RunnablePassthrough()}
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
+
+    return chain.invoke(question)
