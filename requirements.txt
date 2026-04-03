@@ -1,7 +1,8 @@
 langchain
 langchain_community
 langchain_core
-langchain_openai
+langchain-mistralai
+langchain-text-splitters
 faiss-cpu
 pypdf
 streamlit
