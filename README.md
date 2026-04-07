@@ -41,6 +41,11 @@ cd Intelligent-Document-Assistant
 python3 -m venv env
 ```
 
+**Git Bash**
+```bash
+source env/Scripts/activate
+```
+
 **Windows (Command Prompt or PowerShell):**
 
 ```bash
