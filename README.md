@@ -41,10 +41,6 @@ cd Intelligent-Document-Assistant
 python3 -m venv env
 ```
 
-**Git Bash**
-```bash
-source env/Scripts/activate
-```
 
 **Windows (Command Prompt or PowerShell):**
 
@@ -60,6 +56,11 @@ If `python` is not found on Windows, try `py -m venv env`.
 
 ```bash
 source env/bin/activate
+```
+
+**Git Bash**
+```bash
+source env/Scripts/activate
 ```
 
 **Windows — Command Prompt:**
